@@ -1,0 +1,55 @@
+name: ChatGPT APK relay run518
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  relay:
+    if: contains(github.event.head_commit.message, 'Relay run518 APK')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark relay started
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=pending \
+            -f context='APK relay artifact' \
+            -f description='Preparing run518 Phone APK artifact' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Download stable APK
+        env:
+          APK_URL: "https://release-assets.githubusercontent.com/github-production-release-asset/1325279518/4f926b7e-7ab7-44d3-b6ba-a231dd4ce150?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-08-20T16%3A59%3A30Z&rscd=attachment%3B+filename%3DBKHealthCoach-phone-v0.10.1-215f2e0-run518-stable.apk&rsct=application%2Fvnd.android.package-archive&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-08-20T15%3A59%3A22Z&ske=2026-08-20T16%3A59%3A30Z&sks=b&skv=2018-11-09&sig=FZzJCzH5rdvzr6na5RLG0hhXtX7zHLns2QU8m3%2BxTCk%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc4NzI0NDA1OCwibmJmIjoxNzg3MjQyMjU4LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.wG9irUSBIPEgNi7FwfYzy0z3eeH9dJFSW_07FC82Etk&response-content-disposition=attachment%3B%20filename%3DBKHealthCoach-phone-v0.10.1-215f2e0-run518-stable.apk&response-content-type=application%2Fvnd.android.package-archive"
+        run: |
+          set -euo pipefail
+          curl -fL --retry 2 "$APK_URL" -o BKHealthCoach-phone-v0.10.1-215f2e0-run518-stable.apk
+          test -s BKHealthCoach-phone-v0.10.1-215f2e0-run518-stable.apk
+          sha256sum BKHealthCoach-phone-v0.10.1-215f2e0-run518-stable.apk > APK.sha256
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BKHealthCoach-phone-v0.10.1-215f2e0-run518-stable
+          path: |
+            BKHealthCoach-phone-v0.10.1-215f2e0-run518-stable.apk
+            APK.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Mark relay ready
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
+            -f state=success \
+            -f context='APK relay artifact' \
+            -f description='run518 Phone APK artifact ready' \
+            -f target_url="https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
