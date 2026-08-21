@@ -1,0 +1,60 @@
+name: ChatGPT BK Health v0.10.5 relay
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .chatgpt-v0105-relay-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download verified BKHealthCoach run550 stable APKs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download bkhealth-ci-v0.10.5-run550-stable \
+            --repo BKslan/BKHealthCoach \
+            --pattern 'BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk' \
+            --pattern 'BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk'
+          sha256sum BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk
+          sha256sum BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk
+
+      - name: Upload both APKs as one relay artifact
+        id: relay_upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: BKHealthCoach-v0.10.5-run550-stable-apks
+          path: |
+            BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk
+            BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0
+
+      - name: Record relay info
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > .chatgpt-v0105-relay-info.txt <<EOF
+          run_id=${GITHUB_RUN_ID}
+          artifact_id=${{ steps.relay_upload.outputs.artifact-id }}
+          artifact_name=BKHealthCoach-v0.10.5-run550-stable-apks
+          phone_name=BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk
+          watch_name=BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk
+          phone_sha256=2a955223a0d3b225764383ec8680f8dde825dbab470c34832425f7eeef19ce2e
+          watch_sha256=c795abbc7161cbc48357b3ef36dcf869b703cbf04a6794c72bba276ab8ea4c90
+          EOF
+          git config user.name 'BK Health Relay'
+          git config user.email 'actions@users.noreply.github.com'
+          git add .chatgpt-v0105-relay-info.txt
+          git commit -m 'Record BK Health v0.10.5 relay info'
+          git push
