@@ -1,0 +1,7 @@
+run_id=32499270564
+artifact_id=9452838017
+artifact_name=BKHealthCoach-v0.10.5-run550-stable-apks
+phone_name=BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk
+watch_name=BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk
+phone_sha256=2a955223a0d3b225764383ec8680f8dde825dbab470c34832425f7eeef19ce2e
+watch_sha256=c795abbc7161cbc48357b3ef36dcf869b703cbf04a6794c72bba276ab8ea4c90
