@@ -26,18 +26,24 @@ jobs:
           git commit -m 'Record BK Health v0.10.5 relay run id'
           git push
 
-      - name: Download verified BKHealthCoach run550 stable APKs
+      - name: Download verified run550 APKs via short-lived signed URLs
         shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release download bkhealth-ci-v0.10.5-run550-stable \
-            --repo BKslan/BKHealthCoach \
-            --pattern 'BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk' \
-            --pattern 'BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk'
-          sha256sum BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk
-          sha256sum BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk
+          PHONE_URL=$(sed -n 's/^phone_url=//p' .chatgpt-v0105-relay-trigger)
+          WATCH_URL=$(sed -n 's/^watch_url=//p' .chatgpt-v0105-relay-trigger)
+          test -n "$PHONE_URL"
+          test -n "$WATCH_URL"
+          PHONE='BKHealthCoach-phone-v0.10.5-3d103e9-run550-stable.apk'
+          WATCH='BKHealthCoach-watch-v0.10.5-3d103e9-run550-stable.apk'
+          curl -L --fail --retry 3 --retry-all-errors "$PHONE_URL" -o "$PHONE"
+          curl -L --fail --retry 3 --retry-all-errors "$WATCH_URL" -o "$WATCH"
+          PHONE_SHA=$(sha256sum "$PHONE" | awk '{print $1}')
+          WATCH_SHA=$(sha256sum "$WATCH" | awk '{print $1}')
+          echo "Phone SHA-256: $PHONE_SHA"
+          echo "Watch SHA-256: $WATCH_SHA"
+          test "$PHONE_SHA" = '2a955223a0d3b225764383ec8680f8dde825dbab470c34832425f7eeef19ce2e'
+          test "$WATCH_SHA" = 'c795abbc7161cbc48357b3ef36dcf869b703cbf04a6794c72bba276ab8ea4c90'
 
       - name: Upload both APKs as one relay artifact
         id: relay_upload
